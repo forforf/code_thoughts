@@ -2,5 +2,5 @@
 ## Half Gist, Half Blog
 
 ### Latest Entries
-* [Recursive Lambda Functions][http://github.com/forforf/code_thoughts/recursive_lambdas.md]
+* [Recursive Lambda Functions](http://github.com/forforf/code_thoughts/recursive_lambdas.md)
 * 
