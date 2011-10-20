@@ -1,3 +1,8 @@
+---
+layout: default
+title: Simplifying starting dynamic EC2 instances
+---
+
 I use a windows machine at work, so I use Putty to access all of my fun Linux goodies up in the cloud.  I have several EC2 EBS based instances that I'm continually stopping and starting for various reasons (mostly to save money).
 However, my Putty workflow was a royal pain. Every restart of an instance required waiting for it to boot, finding out its new public address, and then load that address into Putty to connect. After I strained my pinky after too much ctrl-C/ctrl-V, I decided to find a way to automate the process.  Google to the rescue!! or so I thought. I couldn't find anything that solved my problem out of the box on Google, probably due to my (lack of good) Google-fu. I was left to my own devices, and by finding little hints and clues from various places I finally created a simple one-click login work flow.
 
