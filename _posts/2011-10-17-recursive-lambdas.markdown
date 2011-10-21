@@ -1,7 +1,3 @@
----
-layout: default
-title: Recursive Anonymous Lambdas
----
 
 I ran into a case where I wanted a recursive lambda and decided to capture some things I learned during my research.  I found that there's a couple ways of approaching this, the more 'pure' way is using a Y-combinator approach, that uses a self-application function to grab the function you'll be recursing.  The other way, and the way I ultimately went, was using the Ruby 1.9 Object#tap method to grab the function you'll be recursing.  The Y-combinator approach is more abstract and brain-expanding, so I covered that first. However, if pragmatism is the goal, feel free to skip to the Object#tap section.
 
