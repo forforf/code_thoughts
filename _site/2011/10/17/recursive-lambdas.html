@@ -1,0 +1,198 @@
+<p>I ran into a case where I wanted a recursive lambda and decided to capture some things I learned during my research.  I found that there's a couple ways of approaching this, the more 'pure' way is using a Y-combinator approach, that uses a self-application function to grab the function you'll be recursing.  The other way, and the way I ultimately went, was using the Ruby 1.9 Object#tap method to grab the function you'll be recursing.  The Y-combinator approach is more abstract and brain-expanding, so I covered that first. However, if pragmatism is the goal, feel free to skip to the Object#tap section.</p>
+
+<p>While investigating recursive lambdas, a google search led me to Nathan Weizenbaum's <a href="http://nex-3.com/">blog</a> post on <a href="http://nex-3.com/posts/43-fun-with-the-y-combinator-in-ruby">Fun with the Y Combinator</a>. He has an excellent write up of this problem in general. However, since I always seem to need to refresh my brain on how to think about recursion, there were bits of his post that I struggled to fully comprehend. One bit in particular is this wonderful line of code known as the self-application function.</p>
+
+<p>Liquid error: undefined method `join' for &quot;\n     lambda{|f| f.call(f)}\n&quot;:String</p>
+
+<p>Or in the more familiar, non-anonymous, method forms</p>
+
+<pre><code>#block/yield version
+def self_app &amp;f
+  yield f
+end
+
+#callable block as the parameter
+def self_app(f)
+  f.call(f)
+end
+</code></pre>
+
+<p>So what does it do?  Well first notice that what we pass into it must be a function since we're going to be calling it. Second, notice that this function must accept a single parameter, and that parameter will be the very same function.  To illustrate let's create a function, <code>g</code></p>
+
+<pre><code>g = lambda{&quot;Hello Lambda World&quot;}
+</code></pre>
+
+<p>Can we pass this function to the self-application function?  No, because it's doesn't have parameter for the self-application function (<code>f</code>) being passed to it. Let's fix that.</p>
+
+<pre><code>g = lambda{|me| &quot;Hello Lambda World from #{me.inspect}&quot;}
+</code></pre>
+
+<p>and apply the self-app function, with the self-app function assigned to <code>f</code> for brevity and convenience.</p>
+
+<pre><code>f = lambda{|f| f.call(f)}
+
+f.call(g)
+#=&gt; &quot;Hello Lambda World from #&lt;Proc:0xb2ddd8@(irb):5 (lambda)&gt;&quot; 
+</code></pre>
+
+<p>So the Hello World function <code>g</code> can be referenced from the Hello World function <code>g</code> ... sounds pretty close to recursion.</p>
+
+<p>Let's make a super simple recursive function to test things out:</p>
+
+<pre><code>sr = lambda do |n, m=0|
+  return m if n==0
+  sr.call(n-1, m += n)
+end
+</code></pre>
+
+<p>This function just sums up all the numbers from 0 to n recursively using this formula:  <code>m = n + (n-1) + (n-2)...</code> until n reaches 0. For example:</p>
+
+<pre><code>sr.call(5)
+#=&gt; 15
+</code></pre>
+
+<p>So let's try it:</p>
+
+<pre><code>f.call(sr).call(5)
+</code></pre>
+
+<p>and fail with</p>
+
+<pre><code>undefined method `-' for #&lt;Proc:0xb2d1f0@scratch.rb:70 (lambda)&gt; (NoMethodError)
+</code></pre>
+
+<p>Remember our recursive function <code>sr</code> got passed function <code>sr</code> as a parameter, and subtracting from Proc's doesn't go over too well. Hmm, let's think this through.  The self-app function is getting passed the recursive lambda (<code>sr</code>), and calling function <code>sr</code> with <code>sr</code> ... aha! the recursive function is being passed itself as the first parameter, not the number <code>5</code> as we want.
+But how do we pass parameters when only the function is being passed in?</p>
+
+<p>We could accept <code>sr</code> as a parameter. Hmmm, maybe call it <code>this</code> since <code>self</code> is a keyword.  Now things are beginning to feel a bit familiar. Let's see where we are:</p>
+
+<pre><code>f.call(sr).call( lambda{|this| ... do something with this ... })  # we want this to be the sr function
+</code></pre>
+
+<p>But wait, this won't work: <code>f.call(fn_a)</code> is the same as <code>fn_a.call(fn_a)</code>, so in the above we have <code>sr.call(sr).call( lambda{|this| ... } )</code> but <code>sr</code> doesn't accept a function as a parameter.</p>
+
+<p>Let's work through it bottom up rather than top down.  However, keep in mind that the self-application function accepts a function as a parameter and will then execute itself, so we want to return our recursive function <code>sr</code>, without it executing.</p>
+
+<pre><code>wrapper = lambda{|dummy| sr }
+wrapper.call(:dummy).call(4)
+#=&gt; 10
+</code></pre>
+
+<p>Notice that the wrapper function returns <code>sr</code> regardless of the parameter passed to it.  So, using that technique voila, we can now use the self-application function to call a recursive function</p>
+
+<pre><code>f.call(wrapper).call(4)
+#=&gt; 10
+</code></pre>
+
+<p>But, wait a minute, that's worse than before!. We've gone backwards. Why would we do <code>f.call(wrapper).call(4)</code> when you could just <code>sr.call(4)</code>?  Ahhh yes, but here comes the neat stuff.  Notice that in <code>f.call(wrapper).call(4)</code> that we've abstracted the name of the named function away (i.e. <code>sr</code> is not used to call the function).  Now, if we could find a way of referencing <code>sr</code> itself inside of it, we could have a <strong>completely anonymous</strong> recursive function.  Think about that for a second.  To call a function recursively you need a handle for the function inside of itself. How do you get a handle on a function that has no handle (i.e. anonymous).  Well, you guessed it, the self application function.</p>
+
+<p>So let's review our recursive function and wrapper again, and put that dummy parameter to use.</p>
+
+<pre><code>sr = lambda do |n, m=0|
+  return m if n==0
+  sr.call(n-1, m+=n)
+end
+
+wrapper = lambda{|dummy| sr }
+</code></pre>
+
+<p>Let's change a couple things. Let's make <code>dummy</code> to be <code>anon</code> since it will be passing an anonymous function, and the other thing we have to do is move the recursive function inside the wrapper, since it will no longer have any &quot;handles&quot; to call any named functions (so it will have to rely on the <code>anon</code> parameter since <code>sr</code> won't apply to anything.).</p>
+
+<pre><code>wrapper = lambda do |anon|
+  lambda do |n, m=0|
+    return m if n==0
+    anon.call(n-1, m+=n)  # this line is a problem
+  end
+end
+</code></pre>
+
+<p>However, this won't work and we need to change the line calling the <code>anon</code> parameter to be a self-application function. Why? because remember we're passing in functions and then executing those functions, so the recursion breaks when we try to pass non-functions as arguments. However, by using the self-application function we return the actual inner function (the recursion function). So doing this will work:  </p>
+
+<pre><code>wrapper = lambda do |anon|
+  lambda do |n, m=0|
+    return m if n==0
+    anon.call(anon).call(n-1, m+=n)  # fixed now
+  end
+end
+</code></pre>
+
+<p>which would give us a this function where the actual recursive function is anonymous:</p>
+
+<pre><code>f.call(wrapper).call(5)
+#=&gt; 15
+</code></pre>
+
+<p>If complete anonymity is your thing, you can go out with full anonymous glory:</p>
+
+<pre><code>lambda { |f| f.call(f) }.call(
+  lambda{ |anon|
+    lambda {|n, m=0|
+      return m if n==0
+      anon.call(anon).call(n-1, m = m + n)
+    }
+  })
+</code></pre>
+
+<p>and to actually use it:</p>
+
+<pre><code>lambda { |f| f.call(f) }.call(
+  lambda{ |anon|
+    lambda {|n, m=0|
+      return m if n==0
+      anon.call(anon).call(n-1, m = m + n)
+    }
+  }).call(5)
+#=&gt; 15
+</code></pre>
+
+<p>Now that we have a good handle on the self-application, see Nathan's <a href="http://nex-3.com/posts/43-fun-with-the-y-combinator-in-ruby">post</a> for some additional refactoring you could do. </p>
+
+<h2>Alternative approach with Ruby 1.9's Object#tap method.</h2>
+
+<p>Ruby 1.9's Object#tap method gives you the ability to grab a reference to a receiver anonymous, or not. So, for example:</p>
+
+<pre><code>lambda{|foo| ... do something with foo ...}.tap{|proc| proc.call(:foo)}
+#=&gt; gives the proc object being &quot;tapped&quot;
+</code></pre>
+
+<p>So for the recursive function we have above, we could do:</p>
+
+<pre><code>lambda{ |n_init|                           #a wrapper function (for initializing)
+  res = 0
+  lambda{ |sr, n, m=0|                     #we pass the object we tapped into the lambda
+    return m if n==0
+    sr.call(sr, n-1, m += n)               #so we can call it recursively
+  }.tap {|sr| res = sr.call(sr, n_init)}   #we tap the anonymous function to get a reference to itself
+  return res
+}.call(5)
+#=&gt; 15
+</code></pre>
+
+<p>Taking the changes one by one. We have the outer wrapper function where we have our initial value for the recursion passed in, initialize our return variable prior to calling the inner recursive function, and after we've recursed (and updated the return variable appropriately) provide the return variable as the output of the function.</p>
+
+<pre><code>lambda{ |n_init|  res = 0; {... recurse, tap ....}; return res}.call(5)
+</code></pre>
+
+<p>Moving to the inner recursive function:</p>
+
+<pre><code>lambda{ |sr, n, m=0| ....
+</code></pre>
+
+<p>Notice that our recursive function <code>sr</code> is passed as a parameter into itself.  We did this with the self-application function above too, it's just more explicit here.</p>
+
+<p>With the <code>sr</code> handle we can call the function recursively, passing the function itself as a parameter.</p>
+
+<pre><code>    sr.call(sr, n-1, m += n)
+</code></pre>
+
+<p>And here is the #tap method that's returning the inner recursive function <code>sr</code> to the block.</p>
+
+<pre><code>  }.tap {|sr| ... do something with sr ....}
+</code></pre>
+
+<p>and once we have the recursive function <code>sr</code> we can kick things off with the initial call.</p>
+
+<pre><code>{ ... recursive function ... }.tap {|sr| res = sr.call(sr, n_init)}
+</code></pre>
+
+<p><a href="http://ciaranm.wordpress.com/2008/11/30/recursive-lambdas-in-ruby-using-objecttap/">More good information on #tap (and back-porting it to 1.8)</a></p>
