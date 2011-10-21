@@ -1,21 +1,24 @@
 <!DOCTYPE html>
-<html>
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
 <head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+<link href="./shared/css/pygments.css" media="screen" rel="stylesheet" type="text/css">
 <title>Code Thoughts part blog, part gist</title>
 </head>
 
 <body>
+<h2>Link to Posts</h2>
+<ul>
 
-<h2><a href="/2011/10/22/syntax-highlighting-test.html">Syntax Highlighting Test</a></h2>
-<p>Happy fun highlighting. <a href='https://github.com/mojombo/jekyll/wiki/liquid-extensions'>More details</a></p>
-<div class='highlight'><pre><code class='ruby'><span class='lineno'>1</span> <span class='k'>def</span> <span class='nf'>foo</span>
-<span class='lineno'>2</span>   <span class='nb'>puts</span> <span class='s1'>&#39;foo&#39;</span>
-<span class='lineno'>3</span> <span class='k'>end</span>
-</code></pre>
-</div>
-<em>Posted on 22 October 2011.</em>
+<li><a href="/2011/10/19/ec2-instances-with-putty.html">Ec2 Instances With Putty</a></li>
 
-<h2><a href="/2011/10/19/ec2-instances-with-putty.html">Ec2 Instances With Putty</a></h2>
+<li><a href="/2011/10/17/recursive-lambdas.html">Recursive Lambdas</a></li>
+
+</ul>
+<br />
+<h2>Recent Posts</h2>
+
+<h3> <a href="/2011/10/19/ec2-instances-with-putty.html">Ec2 Instances With Putty</a></h3>
 <p>I use a windows machine at work, so I use Putty to access all of my fun Linux goodies up in the cloud. I have several EC2 EBS based instances that I&#8217;m continually stopping and starting for various reasons (mostly to save money). However, my Putty workflow was a royal pain. Every restart of an instance required waiting for it to boot, finding out its new public address, and then load that address into Putty to connect. After I strained my pinky after too much ctrl-C/ctrl-V, I decided to find a way to automate the process. Google to the rescue!! or so I thought. I couldn&#8217;t find anything that solved my problem out of the box on Google, probably due to my (lack of good) Google-fu. I was left to my own devices, and by finding little hints and clues from various places I finally created a simple one-click login work flow.</p>
 
 <h3 id='do_the_two_step'>Do the two step</h3>
@@ -35,25 +38,27 @@
 <p><em>RatHole #1: ec2-api tools. I won&#8217;t bore you with my floundering, but I didn&#8217;t find an elegant way to do what I wanted. Not only that, I wasn&#8217;t really keen on having an ec2-api dependence. I didn&#8217;t use them in my normal, cumbersome workflow, why include them now if I didn&#8217;t have to. It didn&#8217;t help that it&#8217;s heavily dependent upon the local environment.</em></p>
 
 <p>Luckily a <a href='http://stackoverflow.com/questions/7525702/how-to-find-the-ip-address-of-an-amazon-ec2-instance-on-reboot'>Stack Overflow</a> question provided an alternate way. From within an instance you can use:</p>
-
-<pre><code>http://instance-data/latest/meta-data/public-ipv4</code></pre>
-
+<div class='highlight'><pre><code class='bash'>    http://instance-data/latest/meta-data/public-ipv4
+</code></pre>
+</div>
 <p>to query the instance metadata for its public IP. A quick little</p>
-
-<pre><code>curl -s http://instance-data/latest/meta-data/public-ipv4
-#=&gt; &quot;174.129.1.1&quot;</code></pre>
-
+<div class='highlight'><pre><code class='bash'>    curl -s http://instance-data/latest/meta-data/public-ipv4
+    <span class='c'>#=&gt; &quot;174.129.1.1&quot;</span>
+</code></pre>
+</div>
 <p>confirmed it.</p>
 
 <h3 id='ok_but_who_am_i_now'>Ok, but who am I now?</h3>
 
 <p>Great, but how to get the new data when I restart the instance? Fortunately, that wasn&#8217;t as hard as I feared it would be. The special cron command <code>@reboot</code> is triggered when an instance is restarted. So now I have a hook to call the script when the instance is restarted. Also, I learned that if you&#8217;re using rvm, that you have to be careful with cron jobs, but a quick little:</p>
-
-<pre><code> crontab -e</code></pre>
-
+<div class='highlight'><pre><code class='bash'>     crontab -e
+</code></pre>
+</div>
 <p>to open the file and inserting</p>
 
-<pre><code>@reboot /bin/bash -l -c &#39;ruby /home/me/whoami_test.rb&#39;</code></pre>
+<p><div class='highlight'><pre><code class='bash'>    @reboot /bin/bash -l -c <span class='s1'>&#39;ruby /home/me/whoami_test.rb&#39;</span>
+</code></pre>
+</div></p>
 
 <p>into the crontab file did the job.</p>
 
@@ -68,31 +73,31 @@
 <p>I ended up going with CouchDB, specifically <a href='http://www.iriscouch.com/'>Iris Couch</a> Which lets you quickly and easily set up a database. Also, I&#8217;m quite familiar with CouchDB having used it for a few other projects, and have installed CouchDb on my own servers a few times. Anyway, one of the great things about CouchDB is that you use standard REST commands (GET,PUT,POST,DELETE) and any user data is plain json. So using Iris and CouchDB&#8217;s Futon admin utility I created a database, let&#8217;s call it <code>&quot;bootie&quot;</code>, and populated it with <code>{&quot;_id&quot;:&quot;MyServer&quot;, &quot;ip&quot;:&quot;not relevant yet&quot;}</code>. Although I did this manually, it&#8217;s quite feasible to do programmatically, I was just being lazy since it&#8217;s a one time setup.</p>
 
 <p>To actually update a CouchDB record, requires a two step process. One to get the current revision of the record, and the second to put the updated data, including the current revision to be updated. It sounds complicated, but its really not that hard in practice. So now, my server side program looked like this.</p>
+<div class='highlight'><pre><code class='ruby'>    <span class='nb'>require</span>  <span class='s1'>&#39;json&#39;</span>
+    <span class='c1'>#Get Instance IP Address</span>
+    <span class='n'>my_ip</span> <span class='o'>=</span> <span class='sb'>`curl -s http://instance-data/latest/meta-data/public-ipv4`</span>
 
-<pre><code>require  &#39;json&#39;
-#Get Instance IP Address
-my_ip = `curl -s http://instance-data/latest/meta-data/public-ipv4`
+    <span class='n'>my_server_name</span> <span class='o'>=</span> <span class='s2'>&quot;MyServer&quot;</span>
+    <span class='n'>bootstrap_db</span> <span class='o'>=</span> <span class='s2'>&quot;http://my_iris.iriscouch.com/bootie&quot;</span>
 
-my_server_name = &quot;MyServer&quot;
-bootstrap_db = &quot;http://my_iris.iriscouch.com/bootie&quot;
+    <span class='c1'>#url for the record data</span>
+    <span class='n'>record_loc</span> <span class='o'>=</span> <span class='n'>bootstrap_db</span> <span class='o'>+</span> <span class='s2'>&quot;/&quot;</span> <span class='o'>+</span> <span class='n'>my_server_name</span>
 
-#url for the record data
-record_loc = bootstrap_db + &quot;/&quot; + my_server_name
+    <span class='c1'>#get rev of current record</span>
+    <span class='n'>data_raw</span> <span class='o'>=</span> <span class='sb'>`curl -s GET </span><span class='si'>#{</span><span class='n'>record_loc</span><span class='si'>}</span><span class='sb'>`</span>
+    <span class='n'>data</span> <span class='o'>=</span> <span class='no'>JSON</span><span class='o'>.</span><span class='n'>parse</span><span class='p'>(</span><span class='n'>data_raw</span><span class='p'>)</span>
+    <span class='n'>rev</span> <span class='o'>=</span> <span class='n'>data</span><span class='o'>[</span><span class='s2'>&quot;_rev&quot;</span><span class='o'>]</span>
 
-#get rev of current record
-data_raw = `curl -s GET #{record_loc}`
-data = JSON.parse(data_raw)
-rev = data[&quot;_rev&quot;]
-
-#update database to current value
-new_record = {
-  &quot;_id&quot; =&gt; my_server_name,
-  &quot;_rev&quot; =&gt; rev,
-  &quot;ip&quot; =&gt; my_ip
-}
-new_record_json = new_record.to_json
-resp = `curl -s --request PUT #{record_loc} -Hcontent-type:application/json -d \&#39;#{new_record_json}\&#39;`</code></pre>
-
+    <span class='c1'>#update database to current value</span>
+    <span class='n'>new_record</span> <span class='o'>=</span> <span class='p'>{</span>
+      <span class='s2'>&quot;_id&quot;</span> <span class='o'>=&gt;</span> <span class='n'>my_server_name</span><span class='p'>,</span>
+      <span class='s2'>&quot;_rev&quot;</span> <span class='o'>=&gt;</span> <span class='n'>rev</span><span class='p'>,</span>
+      <span class='s2'>&quot;ip&quot;</span> <span class='o'>=&gt;</span> <span class='n'>my_ip</span>
+    <span class='p'>}</span>
+    <span class='n'>new_record_json</span> <span class='o'>=</span> <span class='n'>new_record</span><span class='o'>.</span><span class='n'>to_json</span>
+    <span class='n'>resp</span> <span class='o'>=</span> <span class='sb'>`curl -s --request PUT </span><span class='si'>#{</span><span class='n'>record_loc</span><span class='si'>}</span><span class='sb'> -Hcontent-type:application/json -d </span><span class='se'>\&#39;</span><span class='si'>#{</span><span class='n'>new_record_json</span><span class='si'>}</span><span class='se'>\&#39;</span><span class='sb'>`</span>
+</code></pre>
+</div>
 <p>Some quick notes: I used the native curl to interface with the database, I could have any one of several ruby libraries, including Net::Http, but I chose curl. Also, this approach may not be for you if security is paramount. It&#8217;s secure enough for my needs, but I don&#8217;t have any production or sensitive data running on any of these servers. Lastly, this script isn&#8217;t bullet-proofed at all. It&#8217;s not hard to do the error and validation checks, just time-consuming and this already does enough of what I need it to do for my purposes.</p>
 
 <p>A quick test by restarting the instance had me seeing the updated IP address in Iris. Half way there!</p>
@@ -104,60 +109,60 @@ resp = `curl -s --request PUT #{record_loc} -Hcontent-type:application/json -d \
 <p><em>Rathole #4: Since I was on Windows I thought I&#8217;d stay closer to Windows programming by using Vbscript. It turns out that there was no native support for parsing JSON, and to do so would require jumping through more hoops than I desired.</em></p>
 
 <p>I ended up going with Ruby as the scripting language on the windows machine too. First, we need to get the server IP from the Iris. Since I had gone this far doing a fairly decent job of avoiding external libraries, I decided to see if <code>open-uri</code> from the Ruby Standard Library would do what I needed it too.</p>
+<div class='highlight'><pre><code class='ruby'>    <span class='nb'>require</span> <span class='s1'>&#39;open-uri&#39;</span>
 
-<pre><code>require &#39;open-uri&#39;
-
-Server = &quot;MyServer&quot;
-bootstrap_data_json = open(&#39;http://forforf.iriscouch.com/bootstrap/&#39; + Server){|f| f.read}</code></pre>
-
+    <span class='no'>Server</span> <span class='o'>=</span> <span class='s2'>&quot;MyServer&quot;</span>
+    <span class='n'>bootstrap_data_json</span> <span class='o'>=</span> <span class='nb'>open</span><span class='p'>(</span><span class='s1'>&#39;http://forforf.iriscouch.com/bootstrap/&#39;</span> <span class='o'>+</span> <span class='no'>Server</span><span class='p'>){</span><span class='o'>|</span><span class='n'>f</span><span class='o'>|</span> <span class='n'>f</span><span class='o'>.</span><span class='n'>read</span><span class='p'>}</span>
+</code></pre>
+</div>
 <p>Success!! Iris responded without errors</p>
 
 <p><em>Rathole #5: I initially went with the awesome <code>rest-client</code> gem, and that worked fine, but it ended up being an unnecessary external dependency.</em></p>
 
 <p>Getting the handle for the server name, and it&#8217;s IP address was straightforward:</p>
+<div class='highlight'><pre><code class='ruby'>    <span class='nb'>require</span> <span class='s1'>&#39;open-uri&#39;</span>
 
-<pre><code>require &#39;open-uri&#39;
+    <span class='no'>Server</span> <span class='o'>=</span> <span class='s2'>&quot;MyServer&quot;</span>
+    <span class='n'>bootstrap_data_json</span> <span class='o'>=</span> <span class='nb'>open</span><span class='p'>(</span><span class='s1'>&#39;http://forforf.iriscouch.com/bootstrap/&#39;</span> <span class='o'>+</span> <span class='no'>Server</span><span class='p'>){</span><span class='o'>|</span><span class='n'>f</span><span class='o'>|</span> <span class='n'>f</span><span class='o'>.</span><span class='n'>read</span><span class='p'>}</span>
 
-Server = &quot;MyServer&quot;
-bootstrap_data_json = open(&#39;http://forforf.iriscouch.com/bootstrap/&#39; + Server){|f| f.read}
-
-bootstrap_data_raw = JSON.parse(bootstrap_data_json)
-srv_name = bootstrap_data_raw[&quot;_id&quot;]
-ip_addr = bootstrap_data_raw[&quot;ip&quot;]</code></pre>
-
+    <span class='n'>bootstrap_data_raw</span> <span class='o'>=</span> <span class='no'>JSON</span><span class='o'>.</span><span class='n'>parse</span><span class='p'>(</span><span class='n'>bootstrap_data_json</span><span class='p'>)</span>
+    <span class='n'>srv_name</span> <span class='o'>=</span> <span class='n'>bootstrap_data_raw</span><span class='o'>[</span><span class='s2'>&quot;_id&quot;</span><span class='o'>]</span>
+    <span class='n'>ip_addr</span> <span class='o'>=</span> <span class='n'>bootstrap_data_raw</span><span class='o'>[</span><span class='s2'>&quot;ip&quot;</span><span class='o'>]</span>
+</code></pre>
+</div>
 <p>Now, all I had to do was kick off Putty with this data.</p>
 
 <p><em>Rathole #6: Formatting directory paths in Windows to be compatible with Ruby and native system calls.</em></p>
 
 <p>Fortunately, Putty has a robust command line, and using the <code>-i</code> command to include the authentication credentials allowed me to clear the biggest hurdle. The command ended up looking like this:</p>
-
-<pre><code>putty_cmd = &quot;start putty.exe&quot; \
-            &quot; -i \&quot;C:\\Documents and Settings\\path\\to\\my\\keypair.ppk\&quot; \
-            &quot; ec2-user@#{ip_addr}&quot;</code></pre>
-
+<div class='highlight'><pre><code class='ruby'>    <span class='n'>putty_cmd</span> <span class='o'>=</span> <span class='s2'>&quot;start putty.exe&quot;</span> <span class='p'>\</span>
+                <span class='s2'>&quot; -i </span><span class='se'>\&quot;</span><span class='s2'>C:</span><span class='se'>\\</span><span class='s2'>Documents and Settings</span><span class='se'>\\</span><span class='s2'>path</span><span class='se'>\\</span><span class='s2'>to</span><span class='se'>\\</span><span class='s2'>my</span><span class='se'>\\</span><span class='s2'>keypair.ppk</span><span class='se'>\&quot;</span><span class='s2'> \</span>
+<span class='s2'>                &quot;</span> <span class='n'>ec2</span><span class='o'>-</span><span class='n'>user</span><span class='err'>@</span><span class='c1'>#{ip_addr}&quot;</span>
+</code></pre>
+</div>
 <p>The complete script for windows ended up looking like this:</p>
+<div class='highlight'><pre><code class='ruby'>    <span class='c1'>#ssh_my_server.rb</span>
 
-<pre><code>#ssh_my_server.rb
+    <span class='nb'>require</span> <span class='s1'>&#39;open-uri&#39;</span>
 
-require &#39;open-uri&#39;
+    <span class='no'>Server</span> <span class='o'>=</span> <span class='s2'>&quot;MyServer&quot;</span>
+    <span class='n'>bootstrap_data_json</span> <span class='o'>=</span> <span class='nb'>open</span><span class='p'>(</span><span class='s1'>&#39;http://forforf.iriscouch.com/bootstrap/&#39;</span> <span class='o'>+</span> <span class='no'>Server</span><span class='p'>){</span><span class='o'>|</span><span class='n'>f</span><span class='o'>|</span> <span class='n'>f</span><span class='o'>.</span><span class='n'>read</span><span class='p'>}</span>
 
-Server = &quot;MyServer&quot;
-bootstrap_data_json = open(&#39;http://forforf.iriscouch.com/bootstrap/&#39; + Server){|f| f.read}
+    <span class='n'>bootstrap_data_raw</span> <span class='o'>=</span> <span class='no'>JSON</span><span class='o'>.</span><span class='n'>parse</span><span class='p'>(</span><span class='n'>bootstrap_data_json</span><span class='p'>)</span>
+    <span class='n'>srv_name</span> <span class='o'>=</span> <span class='n'>bootstrap_data_raw</span><span class='o'>[</span><span class='s2'>&quot;_id&quot;</span><span class='o'>]</span>
+    <span class='n'>ip_addr</span> <span class='o'>=</span> <span class='n'>bootstrap_data_raw</span><span class='o'>[</span><span class='s2'>&quot;ip&quot;</span><span class='o'>]</span>
 
-bootstrap_data_raw = JSON.parse(bootstrap_data_json)
-srv_name = bootstrap_data_raw[&quot;_id&quot;]
-ip_addr = bootstrap_data_raw[&quot;ip&quot;]
-
-putty_cmd = &quot;start putty.exe&quot; \
-            &quot; -i \&quot;C:\\Documents and Settings\\path\\to\\my\\keypair.ppk\&quot; \
-            &quot; ec2-user@#{ip_addr}&quot;</code></pre>
-
+    <span class='n'>putty_cmd</span> <span class='o'>=</span> <span class='s2'>&quot;start putty.exe&quot;</span> <span class='p'>\</span>
+                <span class='s2'>&quot; -i </span><span class='se'>\&quot;</span><span class='s2'>C:</span><span class='se'>\\</span><span class='s2'>Documents and Settings</span><span class='se'>\\</span><span class='s2'>path</span><span class='se'>\\</span><span class='s2'>to</span><span class='se'>\\</span><span class='s2'>my</span><span class='se'>\\</span><span class='s2'>keypair.ppk</span><span class='se'>\&quot;</span><span class='s2'> \</span>
+<span class='s2'>                &quot;</span> <span class='n'>ec2</span><span class='o'>-</span><span class='n'>user</span><span class='err'>@</span><span class='c1'>#{ip_addr}&quot;</span>
+</code></pre>
+</div>
 <p>Opening a windows command window and typing <code>ruby ssh_my_server.rb</code> opens up a Putty terminal connected to my instance. Sucesss!! No more hunting down address changes, and my pinky will have time to heal now.</p>
 
 <p>PS: I plan on wrapping the the ruby script in a bat file or vbscript so that I can click on the script in file explorer. I haven&#8217;t done it yet, but a batch file like this:</p>
-
-<pre><code>ruby /path/to/script/ssh_my_server.rb</code></pre>
-
+<div class='highlight'><pre><code class='bash'>    ruby /path/to/script/ssh_my_server.rb
+</code></pre>
+</div>
 <p>would do the trick, I imagine.</p>
 
 <h2 id='tldr'>TL;DR</h2>
@@ -167,54 +172,54 @@ putty_cmd = &quot;start putty.exe&quot; \
 <p><a href='http://www.iriscouch.com/'>Iris</a></p>
 
 <h3 id='server_script'>Server Script</h3>
+<div class='highlight'><pre><code class='ruby'>    <span class='nb'>require</span>  <span class='s1'>&#39;json&#39;</span>
+    <span class='c1'>#Get Instance IP Address</span>
+    <span class='n'>my_ip</span> <span class='o'>=</span> <span class='sb'>`curl -s http://instance-data/latest/meta-data/public-ipv4`</span>
 
-<pre><code>require  &#39;json&#39;
-#Get Instance IP Address
-my_ip = `curl -s http://instance-data/latest/meta-data/public-ipv4`
+    <span class='n'>my_server_name</span> <span class='o'>=</span> <span class='s2'>&quot;MyServer&quot;</span>
+    <span class='n'>bootstrap_db</span> <span class='o'>=</span> <span class='s2'>&quot;http://my_iris.iriscouch.com/bootie&quot;</span>
 
-my_server_name = &quot;MyServer&quot;
-bootstrap_db = &quot;http://my_iris.iriscouch.com/bootie&quot;
+    <span class='c1'>#url for the record data</span>
+    <span class='n'>record_loc</span> <span class='o'>=</span> <span class='n'>bootstrap_db</span> <span class='o'>+</span> <span class='s2'>&quot;/&quot;</span> <span class='o'>+</span> <span class='n'>my_server_name</span>
 
-#url for the record data
-record_loc = bootstrap_db + &quot;/&quot; + my_server_name
+    <span class='c1'>#get rev of current record</span>
+    <span class='n'>data_raw</span> <span class='o'>=</span> <span class='sb'>`curl -s GET </span><span class='si'>#{</span><span class='n'>record_loc</span><span class='si'>}</span><span class='sb'>`</span>
+    <span class='n'>data</span> <span class='o'>=</span> <span class='no'>JSON</span><span class='o'>.</span><span class='n'>parse</span><span class='p'>(</span><span class='n'>data_raw</span><span class='p'>)</span>
+    <span class='n'>rev</span> <span class='o'>=</span> <span class='n'>data</span><span class='o'>[</span><span class='s2'>&quot;_rev&quot;</span><span class='o'>]</span>
 
-#get rev of current record
-data_raw = `curl -s GET #{record_loc}`
-data = JSON.parse(data_raw)
-rev = data[&quot;_rev&quot;]
-
-#update database to current value
-new_record = {
-  &quot;_id&quot; =&gt; my_server_name,
-  &quot;_rev&quot; =&gt; rev,
-  &quot;ip&quot; =&gt; my_ip
-}
-new_record_json = new_record.to_json
-resp = `curl -s --request PUT #{record_loc} -Hcontent-type:application/json -d \&#39;#{new_record_json}\&#39;`</code></pre>
-
+    <span class='c1'>#update database to current value</span>
+    <span class='n'>new_record</span> <span class='o'>=</span> <span class='p'>{</span>
+      <span class='s2'>&quot;_id&quot;</span> <span class='o'>=&gt;</span> <span class='n'>my_server_name</span><span class='p'>,</span>
+      <span class='s2'>&quot;_rev&quot;</span> <span class='o'>=&gt;</span> <span class='n'>rev</span><span class='p'>,</span>
+      <span class='s2'>&quot;ip&quot;</span> <span class='o'>=&gt;</span> <span class='n'>my_ip</span>
+    <span class='p'>}</span>
+    <span class='n'>new_record_json</span> <span class='o'>=</span> <span class='n'>new_record</span><span class='o'>.</span><span class='n'>to_json</span>
+    <span class='n'>resp</span> <span class='o'>=</span> <span class='sb'>`curl -s --request PUT </span><span class='si'>#{</span><span class='n'>record_loc</span><span class='si'>}</span><span class='sb'> -Hcontent-type:application/json -d </span><span class='se'>\&#39;</span><span class='si'>#{</span><span class='n'>new_record_json</span><span class='si'>}</span><span class='se'>\&#39;</span><span class='sb'>`</span>
+</code></pre>
+</div>
 <h3 id='client_script'>Client Script</h3>
+<div class='highlight'><pre><code class='ruby'>    <span class='c1'>#ssh_my_server.rb</span>
 
-<pre><code>#ssh_my_server.rb
+    <span class='nb'>require</span> <span class='s1'>&#39;open-uri&#39;</span>
 
-require &#39;open-uri&#39;
+    <span class='no'>Server</span> <span class='o'>=</span> <span class='s2'>&quot;MyServer&quot;</span>
+    <span class='n'>bootstrap_data_json</span> <span class='o'>=</span> <span class='nb'>open</span><span class='p'>(</span><span class='s1'>&#39;http://forforf.iriscouch.com/bootstrap/&#39;</span> <span class='o'>+</span> <span class='no'>Server</span><span class='p'>){</span><span class='o'>|</span><span class='n'>f</span><span class='o'>|</span> <span class='n'>f</span><span class='o'>.</span><span class='n'>read</span><span class='p'>}</span>
 
-Server = &quot;MyServer&quot;
-bootstrap_data_json = open(&#39;http://forforf.iriscouch.com/bootstrap/&#39; + Server){|f| f.read}
+    <span class='n'>bootstrap_data_raw</span> <span class='o'>=</span> <span class='no'>JSON</span><span class='o'>.</span><span class='n'>parse</span><span class='p'>(</span><span class='n'>bootstrap_data_json</span><span class='p'>)</span>
+    <span class='n'>srv_name</span> <span class='o'>=</span> <span class='n'>bootstrap_data_raw</span><span class='o'>[</span><span class='s2'>&quot;_id&quot;</span><span class='o'>]</span>
+    <span class='n'>ip_addr</span> <span class='o'>=</span> <span class='n'>bootstrap_data_raw</span><span class='o'>[</span><span class='s2'>&quot;ip&quot;</span><span class='o'>]</span>
 
-bootstrap_data_raw = JSON.parse(bootstrap_data_json)
-srv_name = bootstrap_data_raw[&quot;_id&quot;]
-ip_addr = bootstrap_data_raw[&quot;ip&quot;]
-
-putty_cmd = &quot;start putty.exe&quot; \
-            &quot; -i \&quot;C:\\Documents and Settings\\path\\to\\my\\keypair.ppk\&quot; \
-            &quot; ec2-user@#{ip_addr}&quot;</code></pre>
-
+    <span class='n'>putty_cmd</span> <span class='o'>=</span> <span class='s2'>&quot;start putty.exe&quot;</span> <span class='p'>\</span>
+                <span class='s2'>&quot; -i </span><span class='se'>\&quot;</span><span class='s2'>C:</span><span class='se'>\\</span><span class='s2'>Documents and Settings</span><span class='se'>\\</span><span class='s2'>path</span><span class='se'>\\</span><span class='s2'>to</span><span class='se'>\\</span><span class='s2'>my</span><span class='se'>\\</span><span class='s2'>keypair.ppk</span><span class='se'>\&quot;</span><span class='s2'> \</span>
+<span class='s2'>                &quot;</span> <span class='n'>ec2</span><span class='o'>-</span><span class='n'>user</span><span class='err'>@</span><span class='c1'>#{ip_addr}&quot;</span>
+</code></pre>
+</div>
 <h3 id='run_it'>Run It</h3>
 
 <p><code>ruby ssh_my_server.rb</code> or wrap it in a batch file for clickable goodness</p>
 <em>Posted on 19 October 2011.</em>
 
-<h2><a href="/2011/10/17/recursive-lambdas.html">Recursive Lambdas</a></h2>
+<h3> <a href="/2011/10/17/recursive-lambdas.html">Recursive Lambdas</a></h3>
 <p>I ran into a case where I wanted a recursive lambda and decided to capture some things I learned during my research. I found that there&#8217;s a couple ways of approaching this, the more &#8216;pure&#8217; way is using a Y-combinator approach, that uses a self-application function to grab the function you&#8217;ll be recursing. The other way, and the way I ultimately went, was using the Ruby 1.9 Object#tap method to grab the function you&#8217;ll be recursing. The Y-combinator approach is more abstract and brain-expanding, so I covered that first. However, if pragmatism is the goal, feel free to skip to the Object#tap section.</p>
 
 <p>While investigating recursive lambdas, a google search led me to Nathan Weizenbaum&#8217;s <a href='http://nex-3.com/'>blog</a> post on <a href='http://nex-3.com/posts/43-fun-with-the-y-combinator-in-ruby'>Fun with the Y Combinator</a>. He has an excellent write up of this problem in general. However, since I always seem to need to refresh my brain on how to think about recursion, there were bits of his post that I struggled to fully comprehend. One bit in particular is this wonderful line of code known as the self-application function.</p>
@@ -222,171 +227,171 @@ putty_cmd = &quot;start putty.exe&quot; \
 </code></pre>
 </div>
 <p>Or in the more familiar, non-anonymous, method forms</p>
-
-<pre><code>#block/yield version
-def self_app &amp;f
-  yield f
-end
-
-#callable block as the parameter
-def self_app(f)
-  f.call(f)
-end</code></pre>
-
-<p>So what does it do? Well first notice that what we pass into it must be a function since we&#8217;re going to be calling it. Second, notice that this function must accept a single parameter, and that parameter will be the very same function. To illustrate let&#8217;s create a function, <code>g</code></p>
-
-<pre><code>g = lambda{&quot;Hello Lambda World&quot;}</code></pre>
-
+<div class='highlight'><pre><code class='ruby'>    <span class='c1'>#block/yield version</span>
+    <span class='k'>def</span> <span class='nf'>self_app</span> <span class='o'>&amp;</span><span class='n'>f</span>
+      <span class='k'>yield</span> <span class='n'>f</span>
+    <span class='k'>end</span>
+</code></pre>
+</div><div class='highlight'><pre><code class='ruby'>    <span class='c1'>#callable block as the parameter</span>
+    <span class='k'>def</span> <span class='nf'>self_app</span><span class='p'>(</span><span class='n'>f</span><span class='p'>)</span>
+      <span class='n'>f</span><span class='o'>.</span><span class='n'>call</span><span class='p'>(</span><span class='n'>f</span><span class='p'>)</span>
+    <span class='k'>end</span>
+</code></pre>
+</div>
+<p>So what does it do? Well first notice that what we pass into it must be a function since we&#8217;re going to be calling it. Second, notice that this function must accept a single parameter, and that parameter will be the very same function. To illustrate let&#8217;s create a function, <code> g </code></p>
+<div class='highlight'><pre><code class='ruby'>    <span class='n'>g</span> <span class='o'>=</span> <span class='nb'>lambda</span><span class='p'>{</span><span class='s2'>&quot;Hello Lambda World&quot;</span><span class='p'>}</span>
+</code></pre>
+</div>
 <p>Can we pass this function to the self-application function? No, because it&#8217;s doesn&#8217;t have parameter for the self-application function (<code>f</code>) being passed to it. Let&#8217;s fix that.</p>
-
-<pre><code>g = lambda{|me| &quot;Hello Lambda World from #{me.inspect}&quot;}</code></pre>
-
+<div class='highlight'><pre><code class='ruby'>    <span class='n'>g</span> <span class='o'>=</span> <span class='nb'>lambda</span><span class='p'>{</span><span class='o'>|</span><span class='n'>me</span><span class='o'>|</span> <span class='s2'>&quot;Hello Lambda World from </span><span class='si'>#{</span><span class='n'>me</span><span class='o'>.</span><span class='n'>inspect</span><span class='si'>}</span><span class='s2'>&quot;</span><span class='p'>}</span>
+</code></pre>
+</div>
 <p>and apply the self-app function, with the self-app function assigned to <code>f</code> for brevity and convenience.</p>
-
-<pre><code>f = lambda{|f| f.call(f)}
-
-f.call(g)
-#=&gt; &quot;Hello Lambda World from #&lt;Proc:0xb2ddd8@(irb):5 (lambda)&gt;&quot; </code></pre>
-
+<div class='highlight'><pre><code class='ruby'>    <span class='n'>f</span> <span class='o'>=</span> <span class='nb'>lambda</span><span class='p'>{</span><span class='o'>|</span><span class='n'>f</span><span class='o'>|</span> <span class='n'>f</span><span class='o'>.</span><span class='n'>call</span><span class='p'>(</span><span class='n'>f</span><span class='p'>)}</span>
+    
+    <span class='n'>f</span><span class='o'>.</span><span class='n'>call</span><span class='p'>(</span><span class='n'>g</span><span class='p'>)</span>
+    <span class='c1'>#=&gt; &quot;Hello Lambda World from #&lt;Proc:0xb2ddd8@(irb):5 (lambda)&gt;&quot; </span>
+</code></pre>
+</div>
 <p>So the Hello World function <code>g</code> can be referenced from the Hello World function <code>g</code> &#8230; sounds pretty close to recursion.</p>
 
 <p>Let&#8217;s make a super simple recursive function to test things out:</p>
-
-<pre><code>sr = lambda do |n, m=0|
-  return m if n==0
-  sr.call(n-1, m += n)
-end</code></pre>
-
+<div class='highlight'><pre><code class='ruby'>    <span class='n'>sr</span> <span class='o'>=</span> <span class='nb'>lambda</span> <span class='k'>do</span> <span class='o'>|</span><span class='n'>n</span><span class='p'>,</span> <span class='n'>m</span><span class='o'>=</span><span class='mi'>0</span><span class='o'>|</span>
+      <span class='k'>return</span> <span class='n'>m</span> <span class='k'>if</span> <span class='n'>n</span><span class='o'>==</span><span class='mi'>0</span>
+      <span class='n'>sr</span><span class='o'>.</span><span class='n'>call</span><span class='p'>(</span><span class='n'>n</span><span class='o'>-</span><span class='mi'>1</span><span class='p'>,</span> <span class='n'>m</span> <span class='o'>+=</span> <span class='n'>n</span><span class='p'>)</span>
+    <span class='k'>end</span>
+</code></pre>
+</div>
 <p>This function just sums up all the numbers from 0 to n recursively using this formula: <code>m = n + (n-1) + (n-2)...</code> until n reaches 0. For example:</p>
-
-<pre><code>sr.call(5)
-#=&gt; 15</code></pre>
-
+<div class='highlight'><pre><code class='ruby'>    <span class='n'>sr</span><span class='o'>.</span><span class='n'>call</span><span class='p'>(</span><span class='mi'>5</span><span class='p'>)</span>
+    <span class='c1'>#=&gt; 15</span>
+</code></pre>
+</div>
 <p>So let&#8217;s try it:</p>
-
-<pre><code>f.call(sr).call(5)</code></pre>
-
+<div class='highlight'><pre><code class='ruby'>    <span class='n'>f</span><span class='o'>.</span><span class='n'>call</span><span class='p'>(</span><span class='n'>sr</span><span class='p'>)</span><span class='o'>.</span><span class='n'>call</span><span class='p'>(</span><span class='mi'>5</span><span class='p'>)</span>
+</code></pre>
+</div>
 <p>and fail with</p>
-
-<pre><code>undefined method `-&#39; for #&lt;Proc:0xb2d1f0@scratch.rb:70 (lambda)&gt; (NoMethodError)</code></pre>
-
+<div class='highlight'><pre><code class='ruby'>    <span class='n'>undefined</span> <span class='nb'>method</span> <span class='sb'>`-&#39; for #&lt;Proc:0xb2d1f0@scratch.rb:70 (lambda)&gt; (NoMethodError)</span>
+</code></pre>
+</div>
 <p>Remember our recursive function <code>sr</code> got passed function <code>sr</code> as a parameter, and subtracting from Proc&#8217;s doesn&#8217;t go over too well. Hmm, let&#8217;s think this through. The self-app function is getting passed the recursive lambda (<code>sr</code>), and calling function <code>sr</code> with <code>sr</code> &#8230; aha! the recursive function is being passed itself as the first parameter, not the number <code>5</code> as we want. But how do we pass parameters when only the function is being passed in?</p>
 
 <p>We could accept <code>sr</code> as a parameter. Hmmm, maybe call it <code>this</code> since <code>self</code> is a keyword. Now things are beginning to feel a bit familiar. Let&#8217;s see where we are:</p>
-
-<pre><code>f.call(sr).call( lambda{|this| ... do something with this ... })  # we want this to be the sr function</code></pre>
-
+<div class='highlight'><pre><code class='ruby'>    <span class='n'>f</span><span class='o'>.</span><span class='n'>call</span><span class='p'>(</span><span class='n'>sr</span><span class='p'>)</span><span class='o'>.</span><span class='n'>call</span><span class='p'>(</span> <span class='nb'>lambda</span><span class='p'>{</span><span class='o'>|</span><span class='n'>this</span><span class='o'>|</span> <span class='o'>.</span><span class='n'>.</span><span class='o'>.</span> <span class='k'>do</span> <span class='n'>something</span> <span class='n'>with</span> <span class='n'>this</span> <span class='o'>.</span><span class='n'>.</span><span class='o'>.</span> <span class='p'>})</span>  <span class='c1'># we want this to be the sr function</span>
+</code></pre>
+</div>
 <p>But wait, this won&#8217;t work: <code>f.call(fn_a)</code> is the same as <code>fn_a.call(fn_a)</code>, so in the above we have <code>sr.call(sr).call( lambda{|this| ... } )</code> but <code>sr</code> doesn&#8217;t accept a function as a parameter.</p>
 
 <p>Let&#8217;s work through it bottom up rather than top down. However, keep in mind that the self-application function accepts a function as a parameter and will then execute itself, so we want to return our recursive function <code>sr</code>, without it executing.</p>
-
-<pre><code>wrapper = lambda{|dummy| sr }
-wrapper.call(:dummy).call(4)
-#=&gt; 10</code></pre>
-
+<div class='highlight'><pre><code class='ruby'>    <span class='n'>wrapper</span> <span class='o'>=</span> <span class='nb'>lambda</span><span class='p'>{</span><span class='o'>|</span><span class='n'>dummy</span><span class='o'>|</span> <span class='n'>sr</span> <span class='p'>}</span>
+    <span class='n'>wrapper</span><span class='o'>.</span><span class='n'>call</span><span class='p'>(</span><span class='ss'>:dummy</span><span class='p'>)</span><span class='o'>.</span><span class='n'>call</span><span class='p'>(</span><span class='mi'>4</span><span class='p'>)</span>
+    <span class='c1'>#=&gt; 10</span>
+</code></pre>
+</div>
 <p>Notice that the wrapper function returns <code>sr</code> regardless of the parameter passed to it. So, using that technique voila, we can now use the self-application function to call a recursive function</p>
-
-<pre><code>f.call(wrapper).call(4)
-#=&gt; 10</code></pre>
-
+<div class='highlight'><pre><code class='ruby'>    <span class='n'>f</span><span class='o'>.</span><span class='n'>call</span><span class='p'>(</span><span class='n'>wrapper</span><span class='p'>)</span><span class='o'>.</span><span class='n'>call</span><span class='p'>(</span><span class='mi'>4</span><span class='p'>)</span>
+    <span class='c1'>#=&gt; 10</span>
+</code></pre>
+</div>
 <p>But, wait a minute, that&#8217;s worse than before!. We&#8217;ve gone backwards. Why would we do <code>f.call(wrapper).call(4)</code> when you could just <code>sr.call(4)</code>? Ahhh yes, but here comes the neat stuff. Notice that in <code>f.call(wrapper).call(4)</code> that we&#8217;ve abstracted the name of the named function away (i.e. <code>sr</code> is not used to call the function). Now, if we could find a way of referencing <code>sr</code> itself inside of it, we could have a <strong>completely anonymous</strong> recursive function. Think about that for a second. To call a function recursively you need a handle for the function inside of itself. How do you get a handle on a function that has no handle (i.e. anonymous). Well, you guessed it, the self application function.</p>
 
 <p>So let&#8217;s review our recursive function and wrapper again, and put that dummy parameter to use.</p>
+<div class='highlight'><pre><code class='ruby'>    <span class='n'>sr</span> <span class='o'>=</span> <span class='nb'>lambda</span> <span class='k'>do</span> <span class='o'>|</span><span class='n'>n</span><span class='p'>,</span> <span class='n'>m</span><span class='o'>=</span><span class='mi'>0</span><span class='o'>|</span>
+      <span class='k'>return</span> <span class='n'>m</span> <span class='k'>if</span> <span class='n'>n</span><span class='o'>==</span><span class='mi'>0</span>
+      <span class='n'>sr</span><span class='o'>.</span><span class='n'>call</span><span class='p'>(</span><span class='n'>n</span><span class='o'>-</span><span class='mi'>1</span><span class='p'>,</span> <span class='n'>m</span><span class='o'>+=</span><span class='n'>n</span><span class='p'>)</span>
+    <span class='k'>end</span>
 
-<pre><code>sr = lambda do |n, m=0|
-  return m if n==0
-  sr.call(n-1, m+=n)
-end
-
-wrapper = lambda{|dummy| sr }</code></pre>
-
+    <span class='n'>wrapper</span> <span class='o'>=</span> <span class='nb'>lambda</span><span class='p'>{</span><span class='o'>|</span><span class='n'>dummy</span><span class='o'>|</span> <span class='n'>sr</span> <span class='p'>}</span>
+</code></pre>
+</div>
 <p>Let&#8217;s change a couple things. Let&#8217;s make <code>dummy</code> to be <code>anon</code> since it will be passing an anonymous function, and the other thing we have to do is move the recursive function inside the wrapper, since it will no longer have any &#8220;handles&#8221; to call any named functions (so it will have to rely on the <code>anon</code> parameter since <code>sr</code> won&#8217;t apply to anything.).</p>
-
-<pre><code>wrapper = lambda do |anon|
-  lambda do |n, m=0|
-    return m if n==0
-    anon.call(n-1, m+=n)  # this line is a problem
-  end
-end</code></pre>
-
+<div class='highlight'><pre><code class='ruby'>    <span class='n'>wrapper</span> <span class='o'>=</span> <span class='nb'>lambda</span> <span class='k'>do</span> <span class='o'>|</span><span class='n'>anon</span><span class='o'>|</span>
+      <span class='nb'>lambda</span> <span class='k'>do</span> <span class='o'>|</span><span class='n'>n</span><span class='p'>,</span> <span class='n'>m</span><span class='o'>=</span><span class='mi'>0</span><span class='o'>|</span>
+        <span class='k'>return</span> <span class='n'>m</span> <span class='k'>if</span> <span class='n'>n</span><span class='o'>==</span><span class='mi'>0</span>
+        <span class='n'>anon</span><span class='o'>.</span><span class='n'>call</span><span class='p'>(</span><span class='n'>n</span><span class='o'>-</span><span class='mi'>1</span><span class='p'>,</span> <span class='n'>m</span><span class='o'>+=</span><span class='n'>n</span><span class='p'>)</span>  <span class='c1'># this line is a problem</span>
+      <span class='k'>end</span>
+    <span class='k'>end</span>
+</code></pre>
+</div>
 <p>However, this won&#8217;t work and we need to change the line calling the <code>anon</code> parameter to be a self-application function. Why? because remember we&#8217;re passing in functions and then executing those functions, so the recursion breaks when we try to pass non-functions as arguments. However, by using the self-application function we return the actual inner function (the recursion function). So doing this will work:</p>
-
-<pre><code>wrapper = lambda do |anon|
-  lambda do |n, m=0|
-    return m if n==0
-    anon.call(anon).call(n-1, m+=n)  # fixed now
-  end
-end</code></pre>
-
+<div class='highlight'><pre><code class='ruby'>    <span class='n'>wrapper</span> <span class='o'>=</span> <span class='nb'>lambda</span> <span class='k'>do</span> <span class='o'>|</span><span class='n'>anon</span><span class='o'>|</span>
+      <span class='nb'>lambda</span> <span class='k'>do</span> <span class='o'>|</span><span class='n'>n</span><span class='p'>,</span> <span class='n'>m</span><span class='o'>=</span><span class='mi'>0</span><span class='o'>|</span>
+        <span class='k'>return</span> <span class='n'>m</span> <span class='k'>if</span> <span class='n'>n</span><span class='o'>==</span><span class='mi'>0</span>
+        <span class='n'>anon</span><span class='o'>.</span><span class='n'>call</span><span class='p'>(</span><span class='n'>anon</span><span class='p'>)</span><span class='o'>.</span><span class='n'>call</span><span class='p'>(</span><span class='n'>n</span><span class='o'>-</span><span class='mi'>1</span><span class='p'>,</span> <span class='n'>m</span><span class='o'>+=</span><span class='n'>n</span><span class='p'>)</span>  <span class='c1'># fixed now</span>
+      <span class='k'>end</span>
+    <span class='k'>end</span>
+</code></pre>
+</div>
 <p>which would give us a this function where the actual recursive function is anonymous:</p>
-
-<pre><code>f.call(wrapper).call(5)
-#=&gt; 15</code></pre>
-
+<div class='highlight'><pre><code class='ruby'>    <span class='n'>f</span><span class='o'>.</span><span class='n'>call</span><span class='p'>(</span><span class='n'>wrapper</span><span class='p'>)</span><span class='o'>.</span><span class='n'>call</span><span class='p'>(</span><span class='mi'>5</span><span class='p'>)</span>
+    <span class='c1'>#=&gt; 15</span>
+</code></pre>
+</div>
 <p>If complete anonymity is your thing, you can go out with full anonymous glory:</p>
-
-<pre><code>lambda { |f| f.call(f) }.call(
-  lambda{ |anon|
-    lambda {|n, m=0|
-      return m if n==0
-      anon.call(anon).call(n-1, m = m + n)
-    }
-  })</code></pre>
-
+<div class='highlight'><pre><code class='ruby'>    <span class='nb'>lambda</span> <span class='p'>{</span> <span class='o'>|</span><span class='n'>f</span><span class='o'>|</span> <span class='n'>f</span><span class='o'>.</span><span class='n'>call</span><span class='p'>(</span><span class='n'>f</span><span class='p'>)</span> <span class='p'>}</span><span class='o'>.</span><span class='n'>call</span><span class='p'>(</span>
+      <span class='nb'>lambda</span><span class='p'>{</span> <span class='o'>|</span><span class='n'>anon</span><span class='o'>|</span>
+        <span class='nb'>lambda</span> <span class='p'>{</span><span class='o'>|</span><span class='n'>n</span><span class='p'>,</span> <span class='n'>m</span><span class='o'>=</span><span class='mi'>0</span><span class='o'>|</span>
+          <span class='k'>return</span> <span class='n'>m</span> <span class='k'>if</span> <span class='n'>n</span><span class='o'>==</span><span class='mi'>0</span>
+          <span class='n'>anon</span><span class='o'>.</span><span class='n'>call</span><span class='p'>(</span><span class='n'>anon</span><span class='p'>)</span><span class='o'>.</span><span class='n'>call</span><span class='p'>(</span><span class='n'>n</span><span class='o'>-</span><span class='mi'>1</span><span class='p'>,</span> <span class='n'>m</span> <span class='o'>=</span> <span class='n'>m</span> <span class='o'>+</span> <span class='n'>n</span><span class='p'>)</span>
+        <span class='p'>}</span>
+      <span class='p'>})</span>
+</code></pre>
+</div>
 <p>and to actually use it:</p>
-
-<pre><code>lambda { |f| f.call(f) }.call(
-  lambda{ |anon|
-    lambda {|n, m=0|
-      return m if n==0
-      anon.call(anon).call(n-1, m = m + n)
-    }
-  }).call(5)
-#=&gt; 15</code></pre>
-
+<div class='highlight'><pre><code class='ruby'>    <span class='nb'>lambda</span> <span class='p'>{</span> <span class='o'>|</span><span class='n'>f</span><span class='o'>|</span> <span class='n'>f</span><span class='o'>.</span><span class='n'>call</span><span class='p'>(</span><span class='n'>f</span><span class='p'>)</span> <span class='p'>}</span><span class='o'>.</span><span class='n'>call</span><span class='p'>(</span>
+      <span class='nb'>lambda</span><span class='p'>{</span> <span class='o'>|</span><span class='n'>anon</span><span class='o'>|</span>
+        <span class='nb'>lambda</span> <span class='p'>{</span><span class='o'>|</span><span class='n'>n</span><span class='p'>,</span> <span class='n'>m</span><span class='o'>=</span><span class='mi'>0</span><span class='o'>|</span>
+          <span class='k'>return</span> <span class='n'>m</span> <span class='k'>if</span> <span class='n'>n</span><span class='o'>==</span><span class='mi'>0</span>
+          <span class='n'>anon</span><span class='o'>.</span><span class='n'>call</span><span class='p'>(</span><span class='n'>anon</span><span class='p'>)</span><span class='o'>.</span><span class='n'>call</span><span class='p'>(</span><span class='n'>n</span><span class='o'>-</span><span class='mi'>1</span><span class='p'>,</span> <span class='n'>m</span> <span class='o'>=</span> <span class='n'>m</span> <span class='o'>+</span> <span class='n'>n</span><span class='p'>)</span>
+        <span class='p'>}</span>
+      <span class='p'>})</span><span class='o'>.</span><span class='n'>call</span><span class='p'>(</span><span class='mi'>5</span><span class='p'>)</span>
+    <span class='c1'>#=&gt; 15</span>
+</code></pre>
+</div>
 <p>Now that we have a good handle on the self-application, see Nathan&#8217;s <a href='http://nex-3.com/posts/43-fun-with-the-y-combinator-in-ruby'>post</a> for some additional refactoring you could do.</p>
 
 <h2 id='alternative_approach_with_ruby_19s_objecttap_method'>Alternative approach with Ruby 1.9&#8217;s Object#tap method.</h2>
 
 <p>Ruby 1.9&#8217;s Object#tap method gives you the ability to grab a reference to a receiver anonymous, or not. So, for example:</p>
-
-<pre><code>lambda{|foo| ... do something with foo ...}.tap{|proc| proc.call(:foo)}
-#=&gt; gives the proc object being &quot;tapped&quot;</code></pre>
-
+<div class='highlight'><pre><code class='ruby'>    <span class='nb'>lambda</span><span class='p'>{</span><span class='o'>|</span><span class='n'>foo</span><span class='o'>|</span> <span class='o'>.</span><span class='n'>.</span><span class='o'>.</span> <span class='k'>do</span> <span class='n'>something</span> <span class='n'>with</span> <span class='n'>foo</span> <span class='o'>.</span><span class='n'>.</span><span class='o'>.</span><span class='p'>}</span><span class='o'>.</span><span class='n'>tap</span><span class='p'>{</span><span class='o'>|</span><span class='nb'>proc</span><span class='o'>|</span> <span class='nb'>proc</span><span class='o'>.</span><span class='n'>call</span><span class='p'>(</span><span class='ss'>:foo</span><span class='p'>)}</span>
+    <span class='c1'>#=&gt; gives the proc object being &quot;tapped&quot;</span>
+</code></pre>
+</div>
 <p>So for the recursive function we have above, we could do:</p>
-
-<pre><code>lambda{ |n_init|                           #a wrapper function (for initializing)
-  res = 0
-  lambda{ |sr, n, m=0|                     #we pass the object we tapped into the lambda
-    return m if n==0
-    sr.call(sr, n-1, m += n)               #so we can call it recursively
-  }.tap {|sr| res = sr.call(sr, n_init)}   #we tap the anonymous function to get a reference to itself
-  return res
-}.call(5)
-#=&gt; 15</code></pre>
-
+<div class='highlight'><pre><code class='ruby'>    <span class='nb'>lambda</span><span class='p'>{</span> <span class='o'>|</span><span class='n'>n_init</span><span class='o'>|</span>                           <span class='c1'>#a wrapper function (for initializing)</span>
+      <span class='n'>res</span> <span class='o'>=</span> <span class='mi'>0</span>
+      <span class='nb'>lambda</span><span class='p'>{</span> <span class='o'>|</span><span class='n'>sr</span><span class='p'>,</span> <span class='n'>n</span><span class='p'>,</span> <span class='n'>m</span><span class='o'>=</span><span class='mi'>0</span><span class='o'>|</span>                     <span class='c1'>#we pass the object we tapped into the lambda</span>
+        <span class='k'>return</span> <span class='n'>m</span> <span class='k'>if</span> <span class='n'>n</span><span class='o'>==</span><span class='mi'>0</span>
+        <span class='n'>sr</span><span class='o'>.</span><span class='n'>call</span><span class='p'>(</span><span class='n'>sr</span><span class='p'>,</span> <span class='n'>n</span><span class='o'>-</span><span class='mi'>1</span><span class='p'>,</span> <span class='n'>m</span> <span class='o'>+=</span> <span class='n'>n</span><span class='p'>)</span>               <span class='c1'>#so we can call it recursively</span>
+      <span class='p'>}</span><span class='o'>.</span><span class='n'>tap</span> <span class='p'>{</span><span class='o'>|</span><span class='n'>sr</span><span class='o'>|</span> <span class='n'>res</span> <span class='o'>=</span> <span class='n'>sr</span><span class='o'>.</span><span class='n'>call</span><span class='p'>(</span><span class='n'>sr</span><span class='p'>,</span> <span class='n'>n_init</span><span class='p'>)}</span>   <span class='c1'>#we tap the anonymous function to get a reference to itself</span>
+      <span class='k'>return</span> <span class='n'>res</span>
+    <span class='p'>}</span><span class='o'>.</span><span class='n'>call</span><span class='p'>(</span><span class='mi'>5</span><span class='p'>)</span>
+    <span class='c1'>#=&gt; 15</span>
+</code></pre>
+</div>
 <p>Taking the changes one by one. We have the outer wrapper function where we have our initial value for the recursion passed in, initialize our return variable prior to calling the inner recursive function, and after we&#8217;ve recursed (and updated the return variable appropriately) provide the return variable as the output of the function.</p>
-
-<pre><code>lambda{ |n_init|  res = 0; {... recurse, tap ....}; return res}.call(5)</code></pre>
-
+<div class='highlight'><pre><code class='ruby'>    <span class='nb'>lambda</span><span class='p'>{</span> <span class='o'>|</span><span class='n'>n_init</span><span class='o'>|</span>  <span class='n'>res</span> <span class='o'>=</span> <span class='mi'>0</span><span class='p'>;</span> <span class='p'>{</span><span class='o'>.</span><span class='n'>.</span><span class='o'>.</span> <span class='n'>recurse</span><span class='p'>,</span> <span class='n'>tap</span> <span class='o'>.</span><span class='n'>.</span><span class='o'>.</span><span class='n'>.</span><span class='p'>};</span> <span class='k'>return</span> <span class='n'>res</span><span class='p'>}</span><span class='o'>.</span><span class='n'>call</span><span class='p'>(</span><span class='mi'>5</span><span class='p'>)</span>
+</code></pre>
+</div>
 <p>Moving to the inner recursive function:</p>
-
-<pre><code>lambda{ |sr, n, m=0| ....</code></pre>
-
+<div class='highlight'><pre><code class='ruby'>    <span class='nb'>lambda</span><span class='p'>{</span> <span class='o'>|</span><span class='n'>sr</span><span class='p'>,</span> <span class='n'>n</span><span class='p'>,</span> <span class='n'>m</span><span class='o'>=</span><span class='mi'>0</span><span class='o'>|</span> <span class='o'>.</span><span class='n'>.</span><span class='o'>.</span><span class='n'>.</span>
+</code></pre>
+</div>
 <p>Notice that our recursive function <code>sr</code> is passed as a parameter into itself. We did this with the self-application function above too, it&#8217;s just more explicit here.</p>
 
 <p>With the <code>sr</code> handle we can call the function recursively, passing the function itself as a parameter.</p>
-
-<pre><code>    sr.call(sr, n-1, m += n)</code></pre>
-
+<div class='highlight'><pre><code class='ruby'>        <span class='n'>sr</span><span class='o'>.</span><span class='n'>call</span><span class='p'>(</span><span class='n'>sr</span><span class='p'>,</span> <span class='n'>n</span><span class='o'>-</span><span class='mi'>1</span><span class='p'>,</span> <span class='n'>m</span> <span class='o'>+=</span> <span class='n'>n</span><span class='p'>)</span>
+</code></pre>
+</div>
 <p>And here is the #tap method that&#8217;s returning the inner recursive function <code>sr</code> to the block.</p>
-
-<pre><code>  }.tap {|sr| ... do something with sr ....}</code></pre>
-
+<div class='highlight'><pre><code class='ruby'>      <span class='p'>}</span><span class='o'>.</span><span class='n'>tap</span> <span class='p'>{</span><span class='o'>|</span><span class='n'>sr</span><span class='o'>|</span> <span class='o'>.</span><span class='n'>.</span><span class='o'>.</span> <span class='k'>do</span> <span class='n'>something</span> <span class='n'>with</span> <span class='n'>sr</span> <span class='o'>.</span><span class='n'>.</span><span class='o'>.</span><span class='n'>.</span><span class='p'>}</span>
+</code></pre>
+</div>
 <p>and once we have the recursive function <code>sr</code> we can kick things off with the initial call.</p>
-
-<pre><code>{ ... recursive function ... }.tap {|sr| res = sr.call(sr, n_init)}</code></pre>
-
+<div class='highlight'><pre><code class='ruby'>    <span class='p'>{</span> <span class='o'>.</span><span class='n'>.</span><span class='o'>.</span> <span class='n'>recursive</span> <span class='n'>function</span> <span class='o'>.</span><span class='n'>.</span><span class='o'>.</span> <span class='p'>}</span><span class='o'>.</span><span class='n'>tap</span> <span class='p'>{</span><span class='o'>|</span><span class='n'>sr</span><span class='o'>|</span> <span class='n'>res</span> <span class='o'>=</span> <span class='n'>sr</span><span class='o'>.</span><span class='n'>call</span><span class='p'>(</span><span class='n'>sr</span><span class='p'>,</span> <span class='n'>n_init</span><span class='p'>)}</span>
+</code></pre>
+</div>
 <p><a href='http://ciaranm.wordpress.com/2008/11/30/recursive-lambdas-in-ruby-using-objecttap/'>More good information on #tap (and back-porting it to 1.8)</a></p>
 <em>Posted on 17 October 2011.</em>
 
