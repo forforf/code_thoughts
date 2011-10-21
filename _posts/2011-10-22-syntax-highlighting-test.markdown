@@ -6,7 +6,7 @@ title: Syntax Highlighting Test
 Happy fun highlighting. 
 [More details](https://github.com/mojombo/jekyll/wiki/liquid-extensions)
 
-{% highlight ruby %}
+{% highlight ruby linenos %}
 def foo
   puts 'foo'
 end
