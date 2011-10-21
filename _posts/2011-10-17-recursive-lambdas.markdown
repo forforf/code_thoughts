@@ -3,7 +3,9 @@ I ran into a case where I wanted a recursive lambda and decided to capture some 
 
 While investigating recursive lambdas, a google search led me to Nathan Weizenbaum's [blog](http://nex-3.com/) post on [Fun with the Y Combinator](http://nex-3.com/posts/43-fun-with-the-y-combinator-in-ruby). He has an excellent write up of this problem in general. However, since I always seem to need to refresh my brain on how to think about recursion, there were bits of his post that I struggled to fully comprehend. One bit in particular is this wonderful line of code known as the self-application function.
 
+{% highlight ruby %}
      lambda{|f| f.call(f)}
+{% endhighlight %}
 
 Or in the more familiar, non-anonymous, method forms
 
