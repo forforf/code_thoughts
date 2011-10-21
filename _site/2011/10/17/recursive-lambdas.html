@@ -2,7 +2,9 @@
 
 <p>While investigating recursive lambdas, a google search led me to Nathan Weizenbaum's <a href="http://nex-3.com/">blog</a> post on <a href="http://nex-3.com/posts/43-fun-with-the-y-combinator-in-ruby">Fun with the Y Combinator</a>. He has an excellent write up of this problem in general. However, since I always seem to need to refresh my brain on how to think about recursion, there were bits of his post that I struggled to fully comprehend. One bit in particular is this wonderful line of code known as the self-application function.</p>
 
-<p>Liquid error: undefined method `join' for &quot;\n     lambda{|f| f.call(f)}\n&quot;:String</p>
+<div class="highlight"><pre><code class="ruby">     <span class="nb">lambda</span><span class="p">{</span><span class="o">|</span><span class="n">f</span><span class="o">|</span> <span class="n">f</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="n">f</span><span class="p">)}</span>
+</code></pre>
+</div>
 
 <p>Or in the more familiar, non-anonymous, method forms</p>
 
