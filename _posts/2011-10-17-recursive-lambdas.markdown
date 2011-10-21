@@ -20,7 +20,7 @@ Or in the more familiar, non-anonymous, method forms
       f.call(f)
     end
 {% endhighlight %}
-So what does it do?  Well first notice that what we pass into it must be a function since we're going to be calling it. Second, notice that this function must accept a single parameter, and that parameter will be the very same function.  To illustrate let's create a function, {% highlight ruby inline%}g{% endhighlight %}
+So what does it do?  Well first notice that what we pass into it must be a function since we're going to be calling it. Second, notice that this function must accept a single parameter, and that parameter will be the very same function.  To illustrate let's create a function, ` g `
 
 {% highlight ruby %}
     g = lambda{"Hello Lambda World"}
