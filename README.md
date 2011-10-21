@@ -1,6 +1,4 @@
-# Code Thoughts
-## Half Gist, Half Blog
+##Code Thoughts
+###Part Blog, Part Gist
 
-### Latest Entries
-* [Recursive Lambda Functions](http://github.com/forforf/code_thoughts/recursive_lambdas.md)
-* 
+(Just thoughts on random code-related stuff)[http://forforf.github.com/code_thoughts]
