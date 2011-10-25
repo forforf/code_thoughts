@@ -10,15 +10,15 @@
 <h2>Link to Posts</h2>
 <ul>
 
-<li><a href="forforf.github.com/code_thoughts/_site//2011/10/19/ec2-instances-with-putty.html">Ec2 Instances With Putty</a></li>
+<li><a href="forforf.github.com/code_thoughts/_site/2011/10/19/ec2-instances-with-putty.html">Ec2 Instances With Putty</a></li>
 
-<li><a href="forforf.github.com/code_thoughts/_site//2011/10/17/recursive-lambdas.html">Recursive Lambdas</a></li>
+<li><a href="forforf.github.com/code_thoughts/_site/2011/10/17/recursive-lambdas.html">Recursive Lambdas</a></li>
 
 </ul>
 <br />
 <h2>Recent Posts</h2>
 
-<h3> <a href="forforf.github.com/code_thoughts/_site//2011/10/19/ec2-instances-with-putty.html">Ec2 Instances With Putty</a></h3>
+<h3> <a href="/2011/10/19/ec2-instances-with-putty.html">Ec2 Instances With Putty</a></h3>
 <p>I use a windows machine at work, so I use Putty to access all of my fun Linux goodies up in the cloud. I have several EC2 EBS based instances that I&#8217;m continually stopping and starting for various reasons (mostly to save money). However, my Putty workflow was a royal pain. Every restart of an instance required waiting for it to boot, finding out its new public address, and then load that address into Putty to connect. After I strained my pinky after too much ctrl-C/ctrl-V, I decided to find a way to automate the process. Google to the rescue!! or so I thought. I couldn&#8217;t find anything that solved my problem out of the box on Google, probably due to my (lack of good) Google-fu. I was left to my own devices, and by finding little hints and clues from various places I finally created a simple one-click login work flow.</p>
 
 <h3 id='do_the_two_step'>Do the two step</h3>
@@ -219,7 +219,7 @@
 <p><code>ruby ssh_my_server.rb</code> or wrap it in a batch file for clickable goodness</p>
 <em>Posted on 19 October 2011.</em>
 
-<h3> <a href="forforf.github.com/code_thoughts/_site//2011/10/17/recursive-lambdas.html">Recursive Lambdas</a></h3>
+<h3> <a href="/2011/10/17/recursive-lambdas.html">Recursive Lambdas</a></h3>
 <p>I ran into a case where I wanted a recursive lambda and decided to capture some things I learned during my research. I found that there&#8217;s a couple ways of approaching this, the more &#8216;pure&#8217; way is using a Y-combinator approach, that uses a self-application function to grab the function you&#8217;ll be recursing. The other way, and the way I ultimately went, was using the Ruby 1.9 Object#tap method to grab the function you&#8217;ll be recursing. The Y-combinator approach is more abstract and brain-expanding, so I covered that first. However, if pragmatism is the goal, feel free to skip to the Object#tap section.</p>
 
 <p>While investigating recursive lambdas, a google search led me to Nathan Weizenbaum&#8217;s <a href='http://nex-3.com/'>blog</a> post on <a href='http://nex-3.com/posts/43-fun-with-the-y-combinator-in-ruby'>Fun with the Y Combinator</a>. He has an excellent write up of this problem in general. However, since I always seem to need to refresh my brain on how to think about recursion, there were bits of his post that I struggled to fully comprehend. One bit in particular is this wonderful line of code known as the self-application function.</p>
