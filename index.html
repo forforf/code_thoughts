@@ -6,13 +6,13 @@ title: Code Thoughts part blog, part gist
 <h2>Link to Posts</h2>
 <ul>
 {% for post in site.posts limit:20 %}
-<li><a href="{{ post.url }}">{{ post.title }}</a></li>
+<li><a href="{{ site.baseurl }}{{ post.url }}">{{ post.title }}</a></li>
 {% endfor %}
 </ul>
 <br />
 <h2>Recent Posts</h2>
 {% for post in site.posts limit:5 %}
-<h3> <a href="{{ post.url }}">{{ post.title }}</a></h3>
+<h3> <a href="{{ site.baseurl }}{{ post.url }}">{{ post.title }}</a></h3>
 {{ post.content }}
 <em>Posted on {{ post.date | date_to_long_string }}.</em>
 {% endfor %}
