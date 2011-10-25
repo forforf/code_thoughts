@@ -1,2 +1,2 @@
-baseurl: forforf.github.com/code_thoughts/
+baseurl: . #forforf.github.com/code_thoughts/
 pygments: true
