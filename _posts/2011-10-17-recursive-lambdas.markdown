@@ -1,6 +1,3 @@
----
-layout: default
----
 I ran into a case where I wanted a recursive lambda and decided to capture some things I learned during my research.  I found that there's a couple ways of approaching this, the more 'pure' way is using a Y-combinator approach, that uses a self-application function to grab the function you'll be recursing.  The other way, and the way I ultimately went, was using the Ruby 1.9 Object#tap method to grab the function you'll be recursing.  The Y-combinator approach is more abstract and brain-expanding, so I covered that first. However, if pragmatism is the goal, feel free to skip to the Object#tap section.
 
 While investigating recursive lambdas, a google search led me to Nathan Weizenbaum's [blog](http://nex-3.com/) post on [Fun with the Y Combinator](http://nex-3.com/posts/43-fun-with-the-y-combinator-in-ruby). He has an excellent write up of this problem in general. However, since I always seem to need to refresh my brain on how to think about recursion, there were bits of his post that I struggled to fully comprehend. One bit in particular is this wonderful line of code known as the self-application function.
